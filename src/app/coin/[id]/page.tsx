@@ -1,26 +1,49 @@
+'use client';
+
 import CoinDetail from '@/components/CoinDetail';
 import Header from '@/components/Header';
 import { notFound } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-async function getCoinData(id: string) {
-  try {
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`,
-      { next: { revalidate: 300 } }
-    );
+interface CoinData {
+  id: string;
+  symbol: string;
+  name: string;
+  image: { large: string };
+  market_data: {
+    current_price: { usd: number };
+    market_cap: { usd: number };
+    total_volume: { usd: number };
+    high_24h: { usd: number };
+    low_24h: { usd: number };
+    price_change_percentage_24h: number;
+    circulating_supply: number;
+  };
+  market_cap_rank: number;
+  description: { en: string };
+  links: {
+    homepage: string[];
+    blockchain_site: string[];
+    official_forum_url: string[];
+    twitter_screen_name: string;
+    telegram_channel_identifier: string;
+    subreddit_url: string;
+  };
+}
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        notFound();
-      }
-      throw new Error('Failed to fetch coin data');
+async function getCoinData(id: string): Promise<CoinData> {
+  const response = await fetch(
+    `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      notFound();
     }
-
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching coin data:', error);
-    throw error;
+    throw new Error('Failed to fetch coin data');
   }
+
+  return response.json();
 }
 
 export async function generateStaticParams() {
@@ -31,8 +54,56 @@ export async function generateStaticParams() {
   }));
 }
 
-const CoinPage = async ({ params }: { params: { id: string } }) => {
-  const coinData = await getCoinData(params.id);
+const CoinPage = ({ params }: { params: { id: string } }) => {
+  const [coinData, setCoinData] = useState<CoinData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const data = await getCoinData(params.id);
+        setCoinData(data);
+      } catch (err) {
+        setError('Failed to fetch coin data');
+        console.error('Error fetching coin data:', err);
+      }
+    };
+
+    fetchInitialData();
+
+    // Set up periodic updates
+    const updateInterval = setInterval(async () => {
+      try {
+        const data = await getCoinData(params.id);
+        setCoinData(data);
+      } catch (err) {
+        console.error('Error updating coin data:', err);
+      }
+    }, 30000); // Update every 30 seconds
+
+    return () => clearInterval(updateInterval);
+  }, [params.id]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <h1 className="text-2xl font-bold mb-4">Error</h1>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!coinData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+        </div>
+      </div>
+    );
+  }
 
   const formattedCoin = {
     id: coinData.id,
@@ -63,7 +134,6 @@ const CoinPage = async ({ params }: { params: { id: string } }) => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(100,50,255,0.1),transparent_50%)]"></div>
       <div className="relative">
         <Header />
-        {/* Main Content */}
         <CoinDetail coin={formattedCoin} />
       </div>
     </main>

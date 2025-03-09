@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatPrice } from '@/utils/formatters';
 import TradingViewWidget from './TradingViewWidget';
 import TechnicalAnalysis from './TechnicalAnalysis';
@@ -34,6 +34,22 @@ interface CoinDetailProps {
 
 const CoinDetail: React.FC<CoinDetailProps> = ({ coin }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPrice, setCurrentPrice] = useState(coin.current_price);
+  const [priceChangePercent, setPriceChangePercent] = useState(coin.price_change_percentage_24h);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setCurrentPrice(coin.current_price);
+    setPriceChangePercent(coin.price_change_percentage_24h);
+  }, [coin.current_price, coin.price_change_percentage_24h]);
+
+  // Function to handle price updates from TradingView
+  const handlePriceUpdate = (price: number) => {
+    setCurrentPrice(price);
+    // Calculate percentage change
+    const percentChange = ((price - coin.current_price) / coin.current_price) * 100;
+    setPriceChangePercent(percentChange);
+  };
 
   return (
     <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -56,17 +72,17 @@ const CoinDetail: React.FC<CoinDetailProps> = ({ coin }) => {
         </div>
         <div className="ml-auto flex items-center">
           <div className="text-3xl font-bold text-white mr-4">
-            ${formatPrice(coin.current_price)}
+            ${formatPrice(currentPrice)}
           </div>
           <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-            coin.price_change_percentage_24h > 0 
+            priceChangePercent > 0 
               ? 'bg-green-500/20 text-green-400' 
               : 'bg-red-500/20 text-red-400'
           }`}>
-            <span className={`mr-1 ${coin.price_change_percentage_24h > 0 ? 'rotate-0' : 'rotate-180'}`}>
+            <span className={`mr-1 ${priceChangePercent > 0 ? 'rotate-0' : 'rotate-180'}`}>
               ▲
             </span>
-            {Math.abs(coin.price_change_percentage_24h).toFixed(2)}%
+            {Math.abs(priceChangePercent).toFixed(2)}%
           </div>
         </div>
       </div>
@@ -75,7 +91,10 @@ const CoinDetail: React.FC<CoinDetailProps> = ({ coin }) => {
         {/* Main Chart Section */}
         <div className="flex-grow lg:w-3/4">
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 h-[900px] overflow-hidden">
-            <TradingViewWidget symbol={coin.symbol.toUpperCase()} />
+            <TradingViewWidget 
+              symbol={coin.symbol.toUpperCase()} 
+              onPriceUpdate={handlePriceUpdate}
+            />
           </div>
           
           {/* About Section - Below Chart */}

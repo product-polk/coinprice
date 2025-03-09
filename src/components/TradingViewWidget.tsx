@@ -4,62 +4,85 @@ import React, { useEffect, useRef } from 'react';
 
 interface TradingViewWidgetProps {
   symbol: string;
+  onPriceUpdate?: (price: number) => void;
 }
 
-const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
+let tvScriptLoadingPromise: Promise<void>;
+
+const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, onPriceUpdate }) => {
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!container.current) return;
 
-    // Clean up any existing widgets
-    container.current.innerHTML = '';
+    const loadScript = () => {
+      if (!tvScriptLoadingPromise) {
+        tvScriptLoadingPromise = new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.id = 'tradingview-widget-loading-script';
+          script.src = 'https://s3.tradingview.com/tv.js';
+          script.type = 'text/javascript';
+          script.onload = () => resolve();
+          document.head.appendChild(script);
+        });
+      }
+      return tvScriptLoadingPromise;
+    };
 
-    const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.type = "text/javascript";
-    script.async = true;
-    script.innerHTML = `
-      {
-        "width": "100%",
-        "height": "900",
-        "autosize": false,
-        "symbol": "BINANCE:${symbol}USD",
-        "interval": "D",
-        "timezone": "Etc/UTC",
-        "theme": "dark",
-        "style": "3",
-        "locale": "en",
-        "enable_publishing": false,
-        "gridColor": "rgba(255, 255, 255, 0.06)",
-        "hide_top_toolbar": true,
-        "hide_legend": false,
-        "save_image": false,
-        "calendar": false,
-        "hide_volume": false,
-        "support_host": "https://www.tradingview.com",
-        "toolbar_bg": "rgba(0, 0, 0, 0)",
-        "hide_side_toolbar": false,
-        "allow_symbol_change": true,
-        "studies": [
-          "RSI@tv-basicstudies",
-          "MASimple@tv-basicstudies",
-          "MACD@tv-basicstudies"
-        ]
-      }`;
+    const createWidget = () => {
+      if (document.getElementById('tradingview_' + symbol)) return;
 
-    container.current.appendChild(script);
+      const config = {
+        autosize: true,
+        symbol: 'BINANCE:' + symbol + 'USDT',
+        interval: '1',
+        timezone: 'exchange',
+        theme: 'dark',
+        style: '1',
+        locale: 'en',
+        enable_publishing: false,
+        hide_top_toolbar: false,
+        hide_legend: false,
+        save_image: false,
+        container_id: 'tradingview_' + symbol,
+        studies: ['RSI@tv-basicstudies'],
+        overrides: {
+          'mainSeriesProperties.candleStyle.upColor': '#26a69a',
+          'mainSeriesProperties.candleStyle.downColor': '#ef5350',
+        },
+      };
 
-    return () => {
-      if (container.current) {
-        container.current.innerHTML = '';
+      const widget = new (window as any).TradingView.widget(config);
+
+      if (onPriceUpdate) {
+        widget.onChartReady(() => {
+          widget.subscribe('onRealTimePriceUpdate', (data: any) => {
+            if (data.price) {
+              onPriceUpdate(data.price);
+            }
+          });
+        });
       }
     };
-  }, [symbol]);
+
+    loadScript().then(createWidget);
+
+    return () => {
+      const containerElement = container.current;
+      if (containerElement) {
+        while (containerElement.firstChild) {
+          containerElement.removeChild(containerElement.firstChild);
+        }
+      }
+    };
+  }, [symbol, onPriceUpdate]);
 
   return (
-    <div className="tradingview-widget-container w-full h-[900px]" ref={container}>
-      <div className="tradingview-widget-container__widget w-full h-full"></div>
+    <div
+      ref={container}
+      className="h-full"
+    >
+      <div id={`tradingview_${symbol}`} className="h-full" />
     </div>
   );
 };
