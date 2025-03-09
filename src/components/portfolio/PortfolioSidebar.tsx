@@ -3,17 +3,18 @@
 import React, { useState } from 'react';
 import { Portfolio, db } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
-import Link from 'next/link';
 import CreatePortfolioModal from '@/components/portfolio/CreatePortfolioModal';
 
 interface PortfolioSidebarProps {
-  activePortfolioId?: number;
+  activePortfolioId?: number | null;
   onCreateClick?: () => void;
+  onPortfolioSelect?: (portfolioId: number) => void;
 }
 
 const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({ 
   activePortfolioId,
-  onCreateClick 
+  onCreateClick,
+  onPortfolioSelect
 }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const portfolios = useLiveQuery<Portfolio[]>(() => db.portfolios.toArray(), []);
@@ -23,6 +24,12 @@ const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({
       onCreateClick();
     } else {
       setIsCreateModalOpen(true);
+    }
+  };
+
+  const handlePortfolioClick = (portfolioId: number) => {
+    if (onPortfolioSelect) {
+      onPortfolioSelect(portfolioId);
     }
   };
 
@@ -44,10 +51,10 @@ const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({
       <div className="space-y-1">
         {portfolios && portfolios.length > 0 ? (
           portfolios.map((portfolio) => (
-            <Link 
+            <button 
               key={portfolio.id} 
-              href={`/portfolio/${portfolio.id}`}
-              className={`flex items-center px-3 py-2 rounded-lg ${
+              onClick={() => handlePortfolioClick(portfolio.id!)}
+              className={`flex items-center px-3 py-2 rounded-lg w-full text-left ${
                 activePortfolioId === portfolio.id 
                   ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200'
@@ -55,7 +62,7 @@ const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({
             >
               <span className="mr-2" role="img" aria-label={portfolio.name}>{portfolio.emoji}</span>
               <span className="truncate">{portfolio.name}</span>
-            </Link>
+            </button>
           ))
         ) : (
           <div className="text-center py-4 text-gray-500 dark:text-gray-400">
