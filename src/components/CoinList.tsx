@@ -25,10 +25,10 @@ interface CoinListProps {
 }
 
 const PriceChange: React.FC<{ value: number | undefined }> = ({ value }) => {
-  if (value === undefined) return <span className="text-gray-400">N/A</span>;
+  if (value === undefined) return <span className="text-gray-400 dark:text-gray-500">N/A</span>;
   
   return (
-    <div className={`flex items-center ${value > 0 ? 'text-green-400' : 'text-red-400'}`}>
+    <div className={`flex items-center ${value > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
       <span className={`mr-1 ${value > 0 ? 'rotate-0' : 'rotate-180'}`}>
         ▲
       </span>
@@ -38,8 +38,8 @@ const PriceChange: React.FC<{ value: number | undefined }> = ({ value }) => {
 };
 
 const SortIcon: React.FC<{ active: boolean; direction: SortDirection }> = ({ active, direction }) => {
-  if (!active) return <span className="ml-1 text-gray-500">↕</span>;
-  return <span className="ml-1 text-white">{direction === 'asc' ? '↑' : '↓'}</span>;
+  if (!active) return <span className="ml-1 text-gray-300 dark:text-gray-600 text-xs font-light">•</span>;
+  return <span className="ml-1 text-gray-700 dark:text-gray-300">{direction === 'asc' ? '↑' : '↓'}</span>;
 };
 
 const CoinList: React.FC<CoinListProps> = ({ coins }) => {
@@ -56,106 +56,170 @@ const CoinList: React.FC<CoinListProps> = ({ coins }) => {
   };
 
   const sortedCoins = [...coins].sort((a, b) => {
-    const multiplier = sortDirection === 'asc' ? 1 : -1;
+    let valA, valB;
     
     switch (sortField) {
       case 'rank':
-        return multiplier * 1; // Already sorted by index
+        return sortDirection === 'asc' ? 1 : -1;  // Preserve current order or reverse
       case 'price':
-        return multiplier * (a.current_price - b.current_price);
+        valA = a.current_price;
+        valB = b.current_price;
+        break;
       case 'change_1h':
-        return multiplier * ((a.price_change_percentage_1h_in_currency || 0) - (b.price_change_percentage_1h_in_currency || 0));
+        valA = a.price_change_percentage_1h_in_currency || 0;
+        valB = b.price_change_percentage_1h_in_currency || 0;
+        break;
       case 'change_24h':
-        return multiplier * ((a.price_change_percentage_24h || 0) - (b.price_change_percentage_24h || 0));
+        valA = a.price_change_percentage_24h || 0;
+        valB = b.price_change_percentage_24h || 0;
+        break;
       case 'change_7d':
-        return multiplier * ((a.price_change_percentage_7d_in_currency || 0) - (b.price_change_percentage_7d_in_currency || 0));
+        valA = a.price_change_percentage_7d_in_currency || 0;
+        valB = b.price_change_percentage_7d_in_currency || 0;
+        break;
       case 'market_cap':
-        return multiplier * (a.market_cap - b.market_cap);
+        valA = a.market_cap;
+        valB = b.market_cap;
+        break;
       case 'circulating_supply':
-        return multiplier * (a.circulating_supply - b.circulating_supply);
+        valA = a.circulating_supply;
+        valB = b.circulating_supply;
+        break;
       default:
         return 0;
     }
+    
+    if (valA === valB) return 0;
+    
+    const result = valA < valB ? -1 : 1;
+    return sortDirection === 'asc' ? result : -result;
   });
 
-  const renderSortableHeader = (label: string, field: SortField) => (
-    <button
-      onClick={() => handleSort(field)}
-      className="flex items-center text-left text-xs font-medium text-gray-300 uppercase tracking-wider hover:text-white"
-    >
-      {label}
-      <SortIcon active={sortField === field} direction={sortDirection} />
-    </button>
-  );
-
   return (
-    <div className="w-full overflow-hidden rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-      <div className="w-full overflow-x-auto">
-        <table className="min-w-full table-fixed">
-          <colgroup>
-            <col className="w-12"/>{/* # */}
-            <col className="w-48"/>{/* Name */}
-            <col className="w-32"/>{/* Price */}
-            <col className="w-24"/>{/* 1h % */}
-            <col className="w-24"/>{/* 24h % */}
-            <col className="w-24"/>{/* 7d % */}
-            <col className="w-40"/>{/* Market Cap */}
-            <col className="w-44"/>{/* Circulating Supply */}
-          </colgroup>
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="px-4 py-4">{renderSortableHeader('#', 'rank')}</th>
-              <th className="px-4 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-              <th className="px-4 py-4">{renderSortableHeader('Price', 'price')}</th>
-              <th className="px-4 py-4">{renderSortableHeader('1h %', 'change_1h')}</th>
-              <th className="px-4 py-4">{renderSortableHeader('24h %', 'change_24h')}</th>
-              <th className="px-4 py-4">{renderSortableHeader('7d %', 'change_7d')}</th>
-              <th className="px-4 py-4">{renderSortableHeader('Market Cap', 'market_cap')}</th>
-              <th className="px-4 py-4">{renderSortableHeader('Circ. Supply', 'circulating_supply')}</th>
+    <div className="overflow-x-auto rounded-xl shadow w-full">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
+        <thead className="bg-gray-100 dark:bg-gray-800">
+          <tr>
+            <th 
+              scope="col" 
+              className="w-10 sm:w-auto px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+              onClick={() => handleSort('rank')}
+            >
+              <div className="flex items-center">
+                <span className="hidden sm:inline">#</span>
+                <SortIcon active={sortField === 'rank'} direction={sortDirection} />
+              </div>
+            </th>
+            <th scope="col" className="w-1/3 sm:w-auto px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Name
+            </th>
+            <th 
+              scope="col" 
+              className="w-1/4 sm:w-auto px-2 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+              onClick={() => handleSort('price')}
+            >
+              <div className="flex items-center justify-end">
+                Price
+                <SortIcon active={sortField === 'price'} direction={sortDirection} />
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              className="w-1/4 sm:w-auto px-2 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+              onClick={() => handleSort('change_24h')}
+            >
+              <div className="flex items-center justify-end">
+                24h
+                <SortIcon active={sortField === 'change_24h'} direction={sortDirection} />
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              className="hidden sm:table-cell px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+              onClick={() => handleSort('change_1h')}
+            >
+              <div className="flex items-center justify-end">
+                1h %
+                <SortIcon active={sortField === 'change_1h'} direction={sortDirection} />
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              className="hidden sm:table-cell px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+              onClick={() => handleSort('change_7d')}
+            >
+              <div className="flex items-center justify-end">
+                7d %
+                <SortIcon active={sortField === 'change_7d'} direction={sortDirection} />
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              className="hidden sm:table-cell px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+              onClick={() => handleSort('market_cap')}
+            >
+              <div className="flex items-center justify-end">
+                Market Cap
+                <SortIcon active={sortField === 'market_cap'} direction={sortDirection} />
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              className="hidden sm:table-cell px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+              onClick={() => handleSort('circulating_supply')}
+            >
+              <div className="flex items-center justify-end">
+                Circulating Supply
+                <SortIcon active={sortField === 'circulating_supply'} direction={sortDirection} />
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
+          {sortedCoins.map((coin, index) => (
+            <tr key={coin.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                {index + 1}
+              </td>
+              <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap overflow-hidden">
+                <Link href={`/coin/${coin.id}`} className="flex items-center group">
+                  <img
+                    src={coin.image}
+                    alt={coin.name}
+                    className="w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2 rounded-full flex-shrink-0"
+                  />
+                  <div className="min-w-0 overflow-hidden">
+                    <div className="hidden sm:block font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
+                      {coin.name}
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-medium">
+                      {coin.symbol.toUpperCase()}
+                    </div>
+                  </div>
+                </Link>
+              </td>
+              <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+                ${formatPrice(coin.current_price)}
+              </td>
+              <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-right text-sm">
+                <PriceChange value={coin.price_change_percentage_24h} />
+              </td>
+              <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
+                <PriceChange value={coin.price_change_percentage_1h_in_currency} />
+              </td>
+              <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
+                <PriceChange value={coin.price_change_percentage_7d_in_currency} />
+              </td>
+              <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+                ${formatLargeNumber(coin.market_cap)}
+              </td>
+              <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+                {formatLargeNumber(coin.circulating_supply)} {coin.symbol.toUpperCase()}
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-white/10">
-            {sortedCoins.map((coin, index) => (
-              <tr
-                key={coin.id}
-                className="hover:bg-white/5 transition-colors duration-200"
-              >
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{index + 1}</td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <Link href={`/coin/${coin.id}`} className="flex items-center group">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                      <img src={coin.image} alt={coin.name} className="w-6 h-6 rounded-full" />
-                    </div>
-                    <div className="ml-2 flex flex-col">
-                      <span className="font-medium text-white text-sm">{coin.name}</span>
-                      <span className="text-gray-400 text-xs uppercase group-hover:text-gray-300">{coin.symbol}</span>
-                    </div>
-                  </Link>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
-                  ${formatPrice(coin.current_price)}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                  <PriceChange value={coin.price_change_percentage_1h_in_currency} />
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                  <PriceChange value={coin.price_change_percentage_24h} />
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                  <PriceChange value={coin.price_change_percentage_7d_in_currency} />
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
-                  ${formatLargeNumber(coin.market_cap)}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
-                  {formatLargeNumber(coin.circulating_supply)} <span className="text-gray-400">{coin.symbol.toUpperCase()}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

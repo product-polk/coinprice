@@ -18,13 +18,12 @@ export default async function Home() {
   const coins = await getCoins();
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(100,50,255,0.1),transparent_50%)]"></div>
+    <main className="min-h-screen bg-white dark:bg-gray-950">
       <div className="relative">
         <Header />
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <CoinList coins={coins} />
         </div>
       </div>

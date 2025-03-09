@@ -17,8 +17,8 @@ const Navigation = () => {
         href="/"
         className={`text-sm font-medium transition-colors ${
           isActive('/') 
-            ? 'text-white' 
-            : 'text-gray-400 hover:text-white'
+            ? 'text-blue-600 dark:text-blue-400 font-semibold' 
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
         }`}
       >
         Markets
@@ -27,8 +27,8 @@ const Navigation = () => {
         href="/portfolio"
         className={`text-sm font-medium transition-colors ${
           isActive('/portfolio') 
-            ? 'text-white' 
-            : 'text-gray-400 hover:text-white'
+            ? 'text-blue-600 dark:text-blue-400 font-semibold' 
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
         }`}
       >
         Portfolio
