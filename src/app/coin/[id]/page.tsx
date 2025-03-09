@@ -32,7 +32,9 @@ export async function generateStaticParams() {
 }
 
 const CoinPage = async ({ params }: { params: { id: string } }) => {
-  const coinData = await getCoinData(params.id);
+  // Ensure params is fully resolved before accessing its properties
+  const resolvedParams = await Promise.resolve(params);
+  const coinData = await getCoinData(resolvedParams.id);
 
   const formattedCoin = {
     id: coinData.id,
@@ -59,8 +61,7 @@ const CoinPage = async ({ params }: { params: { id: string } }) => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(100,50,255,0.1),transparent_50%)]"></div>
+    <main className="min-h-screen bg-white dark:bg-gray-950">
       <div className="relative">
         <Header />
         {/* Main Content */}
