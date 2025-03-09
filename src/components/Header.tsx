@@ -15,17 +15,7 @@ const Header = () => {
             <Navigation />
           </div>
           <div className="flex items-center">
-            <div className="mr-6">
-              <ThemeToggle />
-            </div>
-            <div className="text-right">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Cryptocurrency Prices
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Real-time market cap rankings
-              </p>
-            </div>
+            <ThemeToggle />
           </div>
         </div>
       </div>
