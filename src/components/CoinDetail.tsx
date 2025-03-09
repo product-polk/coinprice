@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { formatPrice, formatLargeNumber } from '@/utils/formatters';
+import { formatPrice } from '@/utils/formatters';
 import TradingViewWidget from './TradingViewWidget';
 import TechnicalAnalysis from './TechnicalAnalysis';
 import AddToPortfolioDialog from './AddToPortfolioDialog';

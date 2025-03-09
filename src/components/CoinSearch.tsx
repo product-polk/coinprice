@@ -15,6 +15,19 @@ interface CoinSearchProps {
   onSelect: (coin: Coin) => void;
 }
 
+interface SearchCoin {
+  id: string;
+  symbol: string;
+  name: string;
+  large: string;
+}
+
+interface PriceData {
+  [key: string]: {
+    usd: number;
+  };
+}
+
 const CoinSearch: React.FC<CoinSearchProps> = ({ onSelect }) => {
   const [search, setSearch] = useState('');
   const [coins, setCoins] = useState<Coin[]>([]);
@@ -38,13 +51,13 @@ const CoinSearch: React.FC<CoinSearchProps> = ({ onSelect }) => {
         
         // Get prices for the top 10 results
         if (data.coins.length > 0) {
-          const ids = data.coins.slice(0, 10).map((c: any) => c.id).join(',');
+          const ids = data.coins.slice(0, 10).map((c: SearchCoin) => c.id).join(',');
           const priceResponse = await fetch(
             `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`
           );
-          const priceData = await priceResponse.json();
+          const priceData: PriceData = await priceResponse.json();
 
-          const coinsWithPrices = data.coins.slice(0, 10).map((coin: any) => ({
+          const coinsWithPrices = data.coins.slice(0, 10).map((coin: SearchCoin) => ({
             id: coin.id,
             symbol: coin.symbol,
             name: coin.name,

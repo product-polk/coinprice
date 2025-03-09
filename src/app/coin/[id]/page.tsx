@@ -3,22 +3,35 @@ import Header from '@/components/Header';
 import { notFound } from 'next/navigation';
 
 async function getCoinData(id: string) {
-  const response = await fetch(
-    `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`,
-    { next: { revalidate: 300 } }
-  );
+  try {
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`,
+      { next: { revalidate: 300 } }
+    );
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      notFound();
+    if (!response.ok) {
+      if (response.status === 404) {
+        notFound();
+      }
+      throw new Error('Failed to fetch coin data');
     }
-    throw new Error('Failed to fetch coin data');
-  }
 
-  return response.json();
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching coin data:', error);
+    throw error;
+  }
 }
 
-export default async function CoinPage({ params }: { params: { id: string } }) {
+export async function generateStaticParams() {
+  // Pre-render the most popular coins
+  const popularCoins = ['bitcoin', 'ethereum', 'binancecoin', 'ripple', 'cardano'];
+  return popularCoins.map((id) => ({
+    id,
+  }));
+}
+
+const CoinPage = async ({ params }: { params: { id: string } }) => {
   const coinData = await getCoinData(params.id);
 
   const formattedCoin = {
@@ -55,4 +68,6 @@ export default async function CoinPage({ params }: { params: { id: string } }) {
       </div>
     </main>
   );
-} 
+};
+
+export default CoinPage; 

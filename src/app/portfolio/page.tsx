@@ -12,6 +12,14 @@ import AddToPortfolioDialog from '@/components/AddToPortfolioDialog';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+interface CoinData {
+  id: string;
+  name: string;
+  symbol: string;
+  current_price: number;
+  image: string;
+}
+
 export default function Portfolio() {
   const holdings = useLiveQuery<PortfolioHolding[]>(
     () => db.portfolio.toArray(),
@@ -19,7 +27,7 @@ export default function Portfolio() {
   );
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedCoin, setSelectedCoin] = useState<any>(null);
+  const [selectedCoin, setSelectedCoin] = useState<CoinData | null>(null);
 
   const chartData = {
     labels: holdings?.map((h: PortfolioHolding) => h.coinName) || [],
@@ -40,7 +48,7 @@ export default function Portfolio() {
     ],
   };
 
-  const handleCoinSelect = (coin: any) => {
+  const handleCoinSelect = (coin: CoinData) => {
     setSelectedCoin(coin);
     setIsDialogOpen(true);
   };
